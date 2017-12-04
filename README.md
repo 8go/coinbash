@@ -1,9 +1,7 @@
-<p align=center>
 ![coinbash.sh logo](https://raw.githubusercontent.com/8go/coinbash/master/coinbash-logo.png)
-</p>
 
 
-**💰 A bash script (CLI) for displaying crypto currencies market data in a terminal 🖥**
+# 💰 A bash script (CLI) for displaying crypto currencies market data in a terminal 🖥
 
 ## Summary
 
@@ -50,7 +48,7 @@ The default currency is USD and it supports AUD, BRL, CAD, CHF, CLP, CNY, CZK, D
 $ coinbash.sh -f AUD # get prices in Australian Dollars
 ```
 
-`-e` or `--eur` is a shortcut for Euros. 
+`-e` or `--eur` is a shortcut for Euros, a shortcut for `-f EUR`. 
 
 ```
 $ coinbash.sh -e # get prices in Euros
@@ -71,7 +69,7 @@ $ coinbash.sh -l btc,eth,ltc # get information for Bitcoin (BTC), Ethereum (ETH)
 You can use the `-i` (or `--listbynames`) with coin name to search cryptocurrencies by their names. Add names seperated by commas.
 
 ```
-$ coinbash.sh -t bitcoin-cash,ethereum-classic # get information for Bitcoin Cash (BCH) and Ethereum Classic (ETC)
+$ coinbash.sh -i bitcoin-cash,ethereum-classic # lists Bitcoin Cash (BCH) and Ethereum Classic (ETC)
 ```
 
 You can use the `-h` (or `--help`) to get help and to see all available options as well as examples.
@@ -154,12 +152,16 @@ coinbash.sh: --verbose, -w
 coinbash.sh:    VERBOSE: Verbose listing of information including supply data, etc. [type: flag]
 ```
 
-## Screenshot
+## Screenshots
 
 ![screenshot 1](https://raw.githubusercontent.com/8go/coinbash/master/coinbash-screenshot.png)
+
 ![screenshot 2](https://raw.githubusercontent.com/8go/coinbash/master/coinbash-screenshot-top12.png)
+
 ![screenshot 3](https://raw.githubusercontent.com/8go/coinbash/master/coinbash-screenshot-listbysymbols.png)
+
 ![screenshot 4](https://raw.githubusercontent.com/8go/coinbash/master/coinbash-screenshot-listbynames.png)
+
 ![screenshot 5](https://raw.githubusercontent.com/8go/coinbash/master/coinbash-screenshot-all.png)
 
 ## Enjoy!
