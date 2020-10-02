@@ -11,8 +11,14 @@
 * A single-file bash script. There is only `coinbash.sh`. There are no config files or any other files.
 * CLI only. No fancy graphics, no windows.
 * Tested on Debian and Ubuntu
-* Dependencies: bash, curl, jq
-* Uses cloud API of [https://api.coinmarketcap.com](https://api.coinmarketcap.com/v1)
+* Dependencies: bash, curl, jq, coinmarketcap-API-key
+* Uses cloud API of https://pro-api.coinmarketcap.com/v1
+* **YOU MUST HAVE YOUR OWN coinmarketcap-API-key**
+  * Without your API key it will *not* work
+  * As of Oct 2020 you can get an API key for *free* at https://coinmarketcap.com
+  * Set the global environment variable `COINMARKETCAP_API_KEY` to your personal coinmarketcap-API-key,
+  * e.g by placing a line like this into your `.bashrc` file 
+    * `export COINMARKETCAP_API_KEY="your-coinmarketcap-API-key-here"`
 * Keywords: CLI, command-line, terminal, bash, market-data, ticker, price-tracker, marketcap, crypto, crypto currencies, cryptocurrency, bitcoin, btc, ethereum
 * License: [GPL v3](https://www.gnu.org/licenses/gpl-3.0.en.html)
 * Inspired by [https://github.com/bichenkk/coinmon](https://github.com/bichenkk/coinmon)
@@ -21,7 +27,7 @@
 ## Install
 
 There is no install. Download the release. Copy the single bash file `coinbash.sh` wherever you want, preferably some directory included in your `PATH`.
-If not already installed and only on the first run, `coinbash.sh` will install the small packages `curl` and `ql`. 
+If not already installed and only on the first run, `coinbash.sh` will install the small packages `curl` and `ql`. Set the environment variable `COINMARKETCAP_API_KEY` to your personal coinmarketcap-API-key.
 
 ## Build
 
@@ -151,6 +157,8 @@ coinbash.sh:    The larger the value for -p the longer execution will take.
 coinbash.sh: --verbose, -w
 coinbash.sh:    VERBOSE: Verbose listing of information including supply data, etc. [type: flag]
 ```
+
+Since 2020 prices are no longer available in `BTC` as this was removed from the API and would require additional calls.
 
 ## Screenshots
 
