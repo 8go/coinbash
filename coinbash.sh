@@ -5,8 +5,11 @@
 # - CLI
 # - A bash script (CLI) for displaying crypto currencies market data in a terminal
 # - Tested on Debian and Ubuntu
-# - Dependencies: bash, curl, jq
-# - Uses cloud API of https://api.coinmarketcap.com/v1
+# - Dependencies: bash, curl, jq, coinmarketcap-API-key
+# - Uses cloud API of https://pro-api.coinmarketcap.com/v1
+# - YOU MUST HAVE YOUR OWN coinmarketcap-API-key, as of Oct 2020 you can get one for free at coinmarketcap.com
+# - set the global environment variable COINMARKETCAP_API_KEY to your personal coinmarketcap-API-key,
+# - e.g export COINMARKETCAP_API_KEY="your-coinmarketcap-API-key-here"
 # - keywords: CLI, command-line, terminal, bash, market-data, ticker, price-tracker, marketcap, crypto, crypto currencies, cryptocurrency, bitcoin, btc, ethereum
 #
 # License: CC BY-SA 4.0 https://creativecommons.org/licenses/by-sa/4.0/
@@ -16,48 +19,138 @@
 
 #
 # API: https://coinmarketcap.com/api/
-# https://api.coinmarketcap.com/v1/ticker/?limit=10&convert=USD
-# https://api.coinmarketcap.com/v1/ticker/bitcoin-cash/?convert=EUR
+# https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?convert=USD&limit=2&start=1
 # Returns something like:
-# [
-#     {
-#         "id": "bitcoin"
-#         "name": "Bitcoin",
-#         "symbol": "BTC",
-#         "rank": "1",
-#         "price_usd": "8294.96",
-#         "price_btc": "1.0",
-#         "24h_volume_usd": "3418410000.0",
-#         "market_cap_usd": "138482076086",
-#         "available_supply": "16694725.0",
-#         "total_supply": "16694725.0",
-#         "max_supply": "21000000.0",
-#         "percent_change_1h": "0.14",
-#         "percent_change_24h": "1.76",
-#         "percent_change_7d": "17.49",
-#         "last_updated": "1511350757"
-#     },
-#     {
-#         "id": "ethereum",
-#         "name": "Ethereum",
-#         "symbol": "ETH",
-#         "rank": "2",
-#         "price_usd": "366.967",
-#         "price_btc": "0.0442768",
-#         "24h_volume_usd": "648360000.0",
-#         "market_cap_usd": "35185640397.0",
-#         "available_supply": "95882301.0",
-#         "total_supply": "95882301.0",
-#         "max_supply": null,
-#         "percent_change_1h": "-0.01",
-#         "percent_change_24h": "0.3",
-#         "percent_change_7d": "9.16",
-#         "last_updated": "1511350755"
-#     }
-# ]
+# {"status":{"timestamp":"2020-10-02T12:10:29.629Z","error_code":0,"error_message":null,"elapsed":9,"credit_count":1,"notice":null,"total_count":3560},"data":[{"id":1,"name":"Bitcoin","symbol":"BTC","slug":"bitcoin","num_market_pairs":9315,"date_added":"2013-04-28T00:00:00.000Z","tags":["mineable","pow","sha-256","store-of-value","state-channels"],"max_supply":21000000,"circulating_supply":18505718,"total_supply":18505718,"platform":null,"cmc_rank":1,"last_updated":"2020-10-02T12:09:30.000Z","quote":{"USD":{"price":10471.2855252,"volume_24h":26623814611.304,"percent_change_1h":-0.0184301,"percent_change_24h":-3.8861,"percent_change_7d":-1.68497,"market_cap":193778657026.8331,"last_updated":"2020-10-02T12:09:30.000Z"}}},{"id":1027,"name":"Ethereum","symbol":"ETH","slug":"ethereum","num_market_pairs":6043,"date_added":"2015-08-07T00:00:00.000Z","tags":["mineable","pow","smart-contracts","binance-chain"],"max_supply":null,"circulating_supply":112840913.124,"total_supply":112840913.124,"platform":null,"cmc_rank":2,"last_updated":"2020-10-02T12:09:23.000Z","quote":{"USD":{"price":339.400890152,"volume_24h":15156595436.1756,"percent_change_1h":-0.00356475,"percent_change_24h":-7.8024,"percent_change_7d":-1.45411,"market_cap":38298306359.8501,"last_updated":"2020-10-02T12:09:23.000Z"}}}]}
 #
-# JSON parsing: jq
+# cat /tmp/coinbash.sh.tmp.json | jq [.data[0]] gives something like
+: '[
+  {
+    "id": 1,
+    "name": "Bitcoin",
+    "symbol": "BTC",
+    "slug": "bitcoin",
+    "num_market_pairs": 9315,
+    "date_added": "2013-04-28T00:00:00.000Z",
+    "tags": [
+      "mineable",
+      "pow",
+      "sha-256",
+      "store-of-value",
+      "state-channels"
+    ],
+    "max_supply": 21000000,
+    "circulating_supply": 18505718,
+    "total_supply": 18505718,
+    "platform": null,
+    "cmc_rank": 1,
+    "last_updated": "2020-10-02T12:09:30.000Z",
+    "quote": {
+      "USD": {
+        "price": 10471.2855252,
+        "volume_24h": 26623814611.304,
+        "percent_change_1h": -0.0184301,
+        "percent_change_24h": -3.8861,
+        "percent_change_7d": -1.68497,
+        "market_cap": 193778657026.8331,
+        "last_updated": "2020-10-02T12:09:30.000Z"
+      }
+    }
+  }
+]'
 #
+# cat /tmp/coinbash.sh.tmp.json | jq [.data[1]][].name  gives something like "Ethereum"
+# cat /tmp/coinbash.sh.tmp.json | jq [.data[1]][].quote.USD.price  gives something like 339.400890152
+
+# https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?convert=USD&slug=bitcoin
+# Returns something like:
+# {"status":{"timestamp":"2020-10-02T12:39:21.288Z","error_code":0,"error_message":null,"elapsed":30,"credit_count":1,"notice":null},"data":{"1":{"id":1,"name":"Bitcoin","symbol":"BTC","slug":"bitcoin","num_market_pairs":9315,"date_added":"2013-04-28T00:00:00.000Z","tags":["mineable","pow","sha-256","store-of-value","state-channels"],"max_supply":21000000,"circulating_supply":18505743,"total_supply":18505743,"is_active":1,"platform":null,"cmc_rank":1,"is_fiat":0,"last_updated":"2020-1002T12:38:21.000Z","quote":{"USD":{"price":10491.9489757,"volume_24h":26838808649.2375,"percent_change_1h":0.12782,"percent_change_24h":-3.70075,"percent_change_7d":-1.5155,"market_cap":194161311313.41742,"last_updated":"2020-10-02T12:38:21.000Z"}}}}}
+#
+# cat "/tmp/coinbash.sh.tmp.json.part" | jq [.data]
+: '[
+  {
+    "1": {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "num_market_pairs": 9315,
+      "date_added": "2013-04-28T00:00:00.000Z",
+      "tags": [
+        "mineable",
+        "pow",
+        "sha-256",
+        "store-of-value",
+        "state-channels"
+      ],
+      "max_supply": 21000000,
+      "circulating_supply": 18505743,
+      "total_supply": 18505743,
+      "is_active": 1,
+      "platform": null,
+      "cmc_rank": 1,
+      "is_fiat": 0,
+      "last_updated": "2020-10-02T12:38:21.000Z",
+      "quote": {
+        "USD": {
+          "price": 10491.9489757,
+          "volume_24h": 26838808649.2375,
+          "percent_change_1h": 0.12782,
+          "percent_change_24h": -3.70075,
+          "percent_change_7d": -1.5155,
+          "market_cap": 194161311313.41742,
+          "last_updated": "2020-10-02T12:38:21.000Z"
+        }
+      }
+    }
+  }
+]
+
+cat "/tmp/coinbash.sh.tmp.json.part" | jq "[.data][] | keys"| jq .[] # gets the id, name
+"1"
+
+cat "/tmp/coinbash.sh.tmp.json.part" | jq "[.data][] | keys"| jq .[] # gets the id, name
+"1"
+key=$(cat "/tmp/coinbash.sh.tmp.json.part" | jq "[.data][] | keys"| jq .[]) # assign the id, name
+echo $key
+"1"
+cat "/tmp/coinbash.sh.tmp.json.part" | jq [.data][].$key
+{
+  "id": 1,
+  "name": "Bitcoin",
+  "symbol": "BTC",
+  "slug": "bitcoin",
+  "num_market_pairs": 9315,
+  "date_added": "2013-04-28T00:00:00.000Z",
+  "tags": [
+    "mineable",
+    "pow",
+    "sha-256",
+    "store-of-value",
+    "state-channels"
+  ],
+  "max_supply": 21000000,
+  "circulating_supply": 18505743,
+  "total_supply": 18505743,
+  "is_active": 1,
+  "platform": null,
+  "cmc_rank": 1,
+  "is_fiat": 0,
+  "last_updated": "2020-10-02T12:38:21.000Z",
+  "quote": {
+    "USD": {
+      "price": 10491.9489757,
+      "volume_24h": 26838808649.2375,
+      "percent_change_1h": 0.12782,
+      "percent_change_24h": -3.70075,
+      "percent_change_7d": -1.5155,
+      "market_cap": 194161311313.41742,
+      "last_updated": "2020-10-02T12:38:21.000Z"
+    }
+  }
+}
+'
+
 # formating of output in table: printf and column
 #
 
@@ -90,9 +183,11 @@ COUNTER=0 # this is a counter of arguments
 VERSIONDESC="2017-NOV-27"
 MYAPP=jq    # this package is required, a json parser
 MYAPP2=curl # this package is required
+# https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&convert=USD&limit=10
+# https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?slug=bitcoin&convert=EUR
 URLPREFIX="https://"
-URLBASE="api.coinmarketcap.com"
-URLPOSTFIX="/v1/ticker/"
+URLBASE="pro-api.coinmarketcap.com/"
+URLPOSTFIX="v1/cryptocurrency/"
 # URLBASEIP="104.17.137.178" # IP address of https://api.coinmarketcap.com from a tool like tor-resolve or http://www.dnsqueries.com/en/dns_lookup.php
 DATAURL=${URLPREFIX}${URLBASE}${URLPOSTFIX}
 JSONFILE="/tmp/${0##*/}.tmp.json"
@@ -258,19 +353,21 @@ function printHeader() {
     symbol="Symbol"
     name="Name"
     price="$FIATUC"
-    market_cap="Market-cap $FIATUC"
+    market_cap="Market-cap-$FIATUC"
     price_btc="BTC"
     percent_change_24h="24h-Change"
     percent_change_7d="7d-Change"
     if [ "$VERBOSE" == "true" ]; then
-        a24h_volume="24h-Volume $FIATUC"
+        a24h_volume="24h-Volume-$FIATUC"
         available_supply="Available-Supply"
         total_supply="Total-Supply"
         max_supply="Max-Supply"
         percent_change_1h="1h-Change"
-        printf "${bold}%s\t%s\t%s\t%7s\t%4s\t%s\t%s\t%s\t%17s\t%17s\t%17s\t%17s\t%17s${reset}\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap"
+        # dont put anything like ${bold} ${reset} here, it confuses `column` later
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%17s\t%17s\t%17s\t%17s\t%17s\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap"
     else
-        printf "${bold}%s\t%s\t%s\t%7s\t%4s\t%s\t%s\t%17s${reset}\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap"
+        # dont put anything like ${bold} ${reset} here, it confuses `column` later
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%17s\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap"
     fi
 }
 
@@ -292,9 +389,43 @@ function setSeperator() {
     fi
 }
 
-# $1 ... index of entry to process, starting at 0
+: ' input is JSON string like this {
+      "id": 1,
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "slug": "bitcoin",
+      "num_market_pairs": 9315,
+      "date_added": "2013-04-28T00:00:00.000Z",
+      "tags": [
+        "mineable",
+        "pow",
+        "sha-256",
+        "store-of-value",
+        "state-channels"
+      ],
+      "max_supply": 21000000,
+      "circulating_supply": 18505743,
+      "total_supply": 18505743,
+      "is_active": 1,
+      "platform": null,
+      "cmc_rank": 1,
+      "is_fiat": 0,
+      "last_updated": "2020-10-02T12:38:21.000Z",
+      "quote": {
+        "USD": {
+          "price": 10491.9489757,
+          "volume_24h": 26838808649.2375,
+          "percent_change_1h": 0.12782,
+          "percent_change_24h": -3.70075,
+          "percent_change_7d": -1.5155,
+          "market_cap": 194161311313.41742,
+          "last_updated": "2020-10-02T12:38:21.000Z"
+        }
+      }
+    }
+'
 function processEntry() {
-    symbol=$(jq ".[$1] .symbol" <"${JSONFILE}")
+    symbol=$(echo "$1" | jq ".symbol")
     symbol="${symbol%\"}"
     symbol="${symbol#\"}"
 
@@ -312,61 +443,61 @@ function processEntry() {
         fi
     fi
 
-    rank=$(jq ".[$1] .rank" <"${JSONFILE}")
-    rank="${rank%\"}"
-    rank="${rank#\"}"
-    name=$(jq ".[$1] .name" <"${JSONFILE}")
-    name="${name%\"}"
-    name="${name#\"}"
-    price=$(jq ".[$1] .price_${FIATLC}" <"${JSONFILE}")
-    price="${price%\"}"
-    price="${price#\"}"
+    rank=$(echo "$1" | jq ".cmc_rank")
+    #rank="${rank%\"}"
+    #rank="${rank#\"}"
+    name=$(echo "$1" | jq ".name")
+    name="${name%\"}"  # remove trailing quote
+    name="${name#\"}"  # remove leading quote
+    name="${name/ /-}" # replace spaces with hyphen
+    price=$(echo "$1" | jq ".quote.$FIATUC.price")
+    #price="${price%\"}"
+    #price="${price#\"}"
     [ $seperator == "," ] && price=${price//./,} # replace all dots
-    price_btc=$(jq ".[$1] .price_btc" <"${JSONFILE}")
-    price_btc="${price_btc%\"}"
-    price_btc="${price_btc#\"}"
+    price_btc="---"                              # no longer offered in same API call
+    #price_btc="${price_btc%\"}"
+    #price_btc="${price_btc#\"}"
     [ $seperator == "," ] && price_btc=${price_btc//./,} # replace all dots
-    percent_change_24h=$(jq ".[$1] .percent_change_24h" <"${JSONFILE}")
-    percent_change_24h="${percent_change_24h%\"}"
-    percent_change_24h="${percent_change_24h#\"}"
+    percent_change_24h=$(echo "$1" | jq ".quote.$FIATUC.percent_change_24h")
+    #percent_change_24h="${percent_change_24h%\"}"
+    #percent_change_24h="${percent_change_24h#\"}"
     [ $seperator == "," ] && percent_change_24h=${percent_change_24h//./,} # replace all dots
-    percent_change_7d=$(jq ".[$1] .percent_change_7d" <"${JSONFILE}")
-    percent_change_7d="${percent_change_7d%\"}"
-    percent_change_7d="${percent_change_7d#\"}"
+    percent_change_7d=$(echo "$1" | jq ".quote.$FIATUC.percent_change_7d")
+    #percent_change_7d="${percent_change_7d%\"}"
+    #percent_change_7d="${percent_change_7d#\"}"
     [ $seperator == "," ] && percent_change_7d=${percent_change_7d//./,} # replace all dots
-    market_cap=$(jq ".[$1] .market_cap_${FIATLC}" <"${JSONFILE}")
-    market_cap="${market_cap%\"}"
-    market_cap="${market_cap#\"}"
+    market_cap=$(echo "$1" | jq ".quote.$FIATUC.market_cap")
+    #market_cap="${market_cap%\"}"
+    #market_cap="${market_cap#\"}"
     [ $seperator == "," ] && market_cap=${market_cap//./,} # replace all dots
     if [ "$VERBOSE" == "true" ]; then
-        jqarg=".[$1] .\"24h_volume_${FIATLC}\"" # because 24h_volume starts with a gigit it must be quoted.
-        a24h_volume=$(jq "${jqarg}" <"${JSONFILE}")
-        a24h_volume="${a24h_volume%\"}"
-        a24h_volume="${a24h_volume#\"}"
+        a24h_volume=$(echo "$1" | jq ".quote.$FIATUC.volume_24h")
+        #a24h_volume="${a24h_volume%\"}"
+        #a24h_volume="${a24h_volume#\"}"
         [ $seperator == "," ] && a24h_volume=${a24h_volume//./,} # replace all dots
 
-        available_supply=$(jq ".[$1] .available_supply" <"${JSONFILE}")
-        available_supply="${available_supply%\"}"
-        available_supply="${available_supply#\"}"
+        available_supply=$(echo "$1" | jq ".circulating_supply") # available_supply
+        #available_supply="${available_supply%\"}"
+        #available_supply="${available_supply#\"}"
         [ $seperator == "," ] && available_supply=${available_supply//./,} # replace all dots
 
-        total_supply=$(jq ".[$1] .total_supply" <"${JSONFILE}")
-        total_supply="${total_supply%\"}"
-        total_supply="${total_supply#\"}"
+        total_supply=$(echo "$1" | jq ".total_supply")
+        #total_supply="${total_supply%\"}"
+        #total_supply="${total_supply#\"}"
         [ $seperator == "," ] && total_supply=${total_supply//./,} # replace all dots
 
-        max_supply=$(jq ".[$1] .max_supply" <"${JSONFILE}")
-        max_supply="${max_supply%\"}"
-        max_supply="${max_supply#\"}"
+        max_supply=$(echo "$1" | jq ".max_supply")
+        #max_supply="${max_supply%\"}"
+        #max_supply="${max_supply#\"}"
         [ $seperator == "," ] && max_supply=${max_supply//./,} # replace all dots
 
-        percent_change_1h=$(jq ".[$1] .percent_change_1h" <"${JSONFILE}")
-        percent_change_1h="${percent_change_1h%\"}"
-        percent_change_1h="${percent_change_1h#\"}"
+        percent_change_1h=$(echo "$1" | jq ".quote.$FIATUC.percent_change_1h")
+        #percent_change_1h="${percent_change_1h%\"}"
+        #percent_change_1h="${percent_change_1h#\"}"
         [ $seperator == "," ] && percent_change_1h=${percent_change_1h//./,} # replace all dots
-        printf "%4d\t%s\t%s\t%'7.f\t%.2f\t%+6.1f%%\t%+6.1f%%\t%+6.1f%%\t%'17.f\t%'17.f\t%'17.f\t%'17.f\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap" 2>/dev/null
+        printf "%d\t%s\t%s\t%'7.f\t%3s\t%+6.1f%%\t%+6.1f%%\t%+6.1f%%\t%'17.f\t%'17.f\t%'17.f\t%'17.f\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap" 2>/dev/null
     else
-        printf "%4d\t%s\t%s\t%'7.f\t%.2f\t%+6.1f%%\t%+6.1f%%\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap" 2>/dev/null
+        printf "%d\t%s\t%s\t%'7.f\t%3s\t%+6.1f%%\t%+6.1f%%\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap" 2>/dev/null
     fi
 
     if [ "$useccsymbolslist" == "true" ]; then
@@ -380,66 +511,70 @@ function processEntry() {
 ########## Main ##########
 
 function main() {
+    if [ "$COINMARKETCAP_API_KEY" == "" ]; then
+        echo "${0##*/}: ${red}${bold}Coinmarketcap-API-key missing.${reset} Global environment variable \"COINMARKETCAP_API_KEY\" is not set. Go to https://coinmarketcap.com and get your personal API key. Then assign it to environment variable \"COINMARKETCAP_API_KEY\"."
+        exit 13
+    fi
     # process arguments
     # source: https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
     while [[ $# -gt 0 ]]; do
         key="${1,,}" # lowercase $1
 
         case $key in
-            h | -h | --h | help | -help | --help | -help* | --help*)
-                HELP="true"
-                ;;
-            -d | --d | debug | -debug | --debug | -debug* | --debug*)
-                DEBUG="true"
-                ;;
-            -v | --v | version | -version | --version | -version* | --version*)
-                VERSION="true"
-                ;;
-            cleanup | -c | --c | clean | -clean | --clean | -clean* | --clean*)
-                DOONLYCLEANUP="true"
-                ;;
-            torify | t | tor | -torify | -t | -tor | --torify | --t | --tor)
-                TORIFY="true"
-                ;;
-            top | n | number | -top | -n | -number | --top | --n | --number)
-                if ! [[ "$2" =~ ^[0-9]+$ ]]; then
-                    echo "${0##*/}: ${red}${bold}Argument \"$key\" is of type \"integer\" and has value \"$2\". \"$2\" does not correspond to its type \"integer\". Please enter a positive number.${reset}"
-                    exit 3
-                fi
-                TOP=$2
-                shift # jump past argument
-                ;;
-            eur | e | euro | euros | -eur | -e | -euro | -euros | --eur | --e | --euro | --euros)
-                EUR="true"
-                ;;
-            fiat | f | -fiat | -f | --fiat | --f)
-                FIAT=$2
-                shift # jump past argument
-                ;;
-            listbysymbols | l | listbysymbol | symbol | symbols | -listbysymbols | -l | -listbysymbol | -symbol | -symbols | --listbysymbols | --l | --listbysymbol | --symbol | --symbols)
-                CCSYMBOLSLIST="$2"
-                shift # jump past argument
-                ;;
-            listbynames | i | listbyname | name | names | -listbynames | -i | -listbyname | -name | -names | --listbynames | --i | --listbyname | --name | --names)
-                CCNAMESLIST="$2"
-                shift # jump past argument
-                ;;
-            depth | p | deep | -depth | -p | -deep | --depth | --p | --deep)
-                if ! [[ "$2" =~ ^[0-9]+$ ]]; then
-                    echo "${0##*/}: ${red}${bold}Argument \"$key\" is of type \"integer\" and has value \"$2\". \"$2\" does not correspond to its type \"integer\". Please enter a positive number.${reset}"
-                    exit 3
-                fi
-                DEPTH=$2
-                shift # jump past argument
-                ;;
-            verbose | w | detail* | -verbose | -w | -detail* | --verbose | --w | --detail*)
-                VERBOSE="true"
-                ;;
-            *)
-                # UNSPECIFIED option
-                ((COUNTER++))
-                UNSPECIFIED[$COUNTER]=$1
-                ;;
+        h | -h | --h | help | -help | --help | -help* | --help*)
+            HELP="true"
+            ;;
+        -d | --d | debug | -debug | --debug | -debug* | --debug*)
+            DEBUG="true"
+            ;;
+        -v | --v | version | -version | --version | -version* | --version*)
+            VERSION="true"
+            ;;
+        cleanup | -c | --c | clean | -clean | --clean | -clean* | --clean*)
+            DOONLYCLEANUP="true"
+            ;;
+        torify | t | tor | -torify | -t | -tor | --torify | --t | --tor)
+            TORIFY="true"
+            ;;
+        top | n | number | -top | -n | -number | --top | --n | --number)
+            if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                echo "${0##*/}: ${red}${bold}Argument \"$key\" is of type \"integer\" and has value \"$2\". \"$2\" does not correspond to its type \"integer\". Please enter a positive number.${reset}"
+                exit 3
+            fi
+            TOP=$2
+            shift # jump past argument
+            ;;
+        eur | e | euro | euros | -eur | -e | -euro | -euros | --eur | --e | --euro | --euros)
+            EUR="true"
+            ;;
+        fiat | f | -fiat | -f | --fiat | --f)
+            FIAT=$2
+            shift # jump past argument
+            ;;
+        listbysymbols | l | listbysymbol | symbol | symbols | -listbysymbols | -l | -listbysymbol | -symbol | -symbols | --listbysymbols | --l | --listbysymbol | --symbol | --symbols)
+            CCSYMBOLSLIST="$2"
+            shift # jump past argument
+            ;;
+        listbynames | i | listbyname | name | names | -listbynames | -i | -listbyname | -name | -names | --listbynames | --i | --listbyname | --name | --names)
+            CCNAMESLIST="$2"
+            shift # jump past argument
+            ;;
+        depth | p | deep | -depth | -p | -deep | --depth | --p | --deep)
+            if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                echo "${0##*/}: ${red}${bold}Argument \"$key\" is of type \"integer\" and has value \"$2\". \"$2\" does not correspond to its type \"integer\". Please enter a positive number.${reset}"
+                exit 3
+            fi
+            DEPTH=$2
+            shift # jump past argument
+            ;;
+        verbose | w | detail* | -verbose | -w | -detail* | --verbose | --w | --detail*)
+            VERBOSE="true"
+            ;;
+        *)
+            # UNSPECIFIED option
+            ((COUNTER++))
+            UNSPECIFIED[$COUNTER]=$1
+            ;;
         esac
         shift # past argument or value
     done
@@ -483,7 +618,9 @@ function main() {
     # shellcheck disable=SC2086
     if [ "$EUR" == "true" ]; then
         FIAT="EUR"
+        # shellcheck disable=SC2034
         FIATUC=${FIAT^^} # uppercase
+        # shellcheck disable=SC2034
         FIATLC=${FIAT,,} # lowercase
     fi
     CONVERT="?convert=${FIATUC}"
@@ -561,6 +698,14 @@ function main() {
     [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: wasinstalled  = $wasinstalled"
     [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: wasinstalled2 = $wasinstalled2"
 
+    # column -t -R 4,6,7,8,9,10,11,12,13 does not work on all platforms as column BSD does not support -R option
+    echo "foo" | column -t -R 1 2>/dev/null >/dev/null
+    ret=$?
+    if [ "$ret" == "0" ]; then
+        COLUMNOPTIONS="-R 4,6,7,8,9,10,11,12,13"
+    else
+        COLUMNOPTIONS=""
+    fi
     # $TORIFYCMD curl -s "https://3g2upl4pq6kufc4m.onion/html" >"${JSONFILE}.html" # for testing
     if [ "$useccnameslist" == "true" ]; then
         LIMIT=""
@@ -568,13 +713,15 @@ function main() {
         echo -e "[\n" >"${JSONFILE}"
         isfirst="true"
         for name in "${CCNAMESARRAY[@]}"; do
-            [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -s \"${DATAURL}${name}/${CONVERT}\" > \"${JSONFILE}.part\""
-            $TORIFYCMD curl -s "${DATAURL}${name}/${CONVERT}" >"${JSONFILE}.part"
+            [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" -s  \"${DATAURL}quotes/latest${CONVERT}&slug=${name}\" > \"${JSONFILE}.part\""
+            $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}quotes/latest${CONVERT}&slug=${name}" >"${JSONFILE}.part"
             # shellcheck disable=SC2046
             if [ $(grep -c "id not found" "${JSONFILE}.part") -eq 1 ]; then
                 echo "${0##*/}: ${yellow}WARNING: No crypto currency with name \"$name\" was not found.${reset} Skipping it."
             else
-                entry=$(jq ".[0]" <"${JSONFILE}.part")
+                key=$(cat "${JSONFILE}.part" | jq "[.data][] | keys" | jq .[]) # assign the id, name
+                # echo $key  ==>  "1"  for bitcoin
+                entry=$(cat "${JSONFILE}.part" | jq [.data][].$key)
                 if [ "$isfirst" == "true" ]; then
                     isfirst="false"
                 else
@@ -587,14 +734,18 @@ function main() {
         rm -f "${JSONFILE}.part"
     else
         LIMIT="&limit=${TOP}"
-        [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -s \"${DATAURL}${CONVERT}${LIMIT}\" > \"${JSONFILE}\""
-        $TORIFYCMD curl -s "${DATAURL}${CONVERT}${LIMIT}" >"${JSONFILE}"
+        [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" s \"${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1\" > \"${JSONFILE}\""
+        $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1" >"${JSONFILE}"
     fi
     setSeperator
     ii=0
     morelines="true"
     while [ ${morelines} == "true" ]; do
-        ret=$(jq ".[$ii]" <"${JSONFILE}")
+        if [ "$useccnameslist" == "true" ]; then
+            ret=$(cat "${JSONFILE}" | jq ".[$ii]")
+        else
+            ret=$(cat "${JSONFILE}" | jq "[.data[$ii]][]")
+        fi
         if [ "$ret" == "null" ]; then
             morelines="false"
             ii=$((ii - 1))
@@ -602,14 +753,14 @@ function main() {
             if [ $ii -eq 0 ]; then
                 printHeader
             fi
-            processEntry $ii
+            processEntry "$ret"
             if [ $? -eq $ALLMATCHED ]; then
                 morelines="false"
             fi
             ii=$((ii + 1))
         fi
-    done | column -t -s $'\t' \
-        | sed -e "s/\(\+[0-9]*\.[0-9]*%\)/${green}\1${reset}/g" \
+    done | tr -s "\t" " " | tr -s " " | column -t $COLUMNOPTIONS |
+        sed -e "s/\(\+[0-9]*\.[0-9]*%\)/${green}\1${reset}/g" \
             -e "s/\(\-[0-9]*\.[0-9]*%\)/${red}\1${reset}/g" \
             -e "s/\(\+[0-9]*\,[0-9]*%\)/${green}\1${reset}/g" \
             -e "s/\(\-[0-9]*\,[0-9]*%\)/${red}\1${reset}/g"
