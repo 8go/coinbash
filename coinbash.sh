@@ -495,9 +495,9 @@ function processEntry() {
         #percent_change_1h="${percent_change_1h%\"}"
         #percent_change_1h="${percent_change_1h#\"}"
         [ $seperator == "," ] && percent_change_1h=${percent_change_1h//./,} # replace all dots
-        printf "%d\t%s\t%s\t%'7.f\t%3s\t%+6.1f%%\t%+6.1f%%\t%+6.1f%%\t%'17.f\t%'17.f\t%'17.f\t%'17.f\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap" 2>/dev/null
+        printf "%d\t%s\t%s\t%'7.2f\t%3s\t%+6.1f%%\t%+6.1f%%\t%+6.1f%%\t%'17.f\t%'17.f\t%'17.f\t%'17.f\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap" 2>/dev/null
     else
-        printf "%d\t%s\t%s\t%'7.f\t%3s\t%+6.1f%%\t%+6.1f%%\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap" 2>/dev/null
+        printf "%d\t%s\t%s\t%'7.2f\t%3s\t%+6.1f%%\t%+6.1f%%\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap" 2>/dev/null
     fi
 
     if [ "$useccsymbolslist" == "true" ]; then
