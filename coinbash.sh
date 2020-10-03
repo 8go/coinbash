@@ -180,7 +180,7 @@ VERSION="false" # for --version argument;
 DOONLYCLEANUP="false" # for --cleanup argument;
 # shellcheck disable=SC2034
 COUNTER=0 # this is a counter of arguments
-VERSIONDESC="2017-NOV-27"
+VERSIONDESC="2020-OCT-03"
 MYAPP=jq    # this package is required, a json parser
 MYAPP2=curl # this package is required
 # https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&convert=USD&limit=10
@@ -196,7 +196,7 @@ TORIFY="false"
 TOPDEFAULT=10   # default
 TOP=$TOPDEFAULT # init
 FIAT="USD"      # default fiat currency
-FIATARRAY=(AUD BRL CAD CHF CLP CNY CZK DKK EUR GBP HKD HUF IDR ILS INR JPY KRW MXN MYR NOK NZD PHP PKR PLN RUB SEK SGD THB TRY TWD USD ZAR)
+FIATARRAY=(BTC ETH USDT XRP BCH BNB DOT LINK CRO BSV LTC XAU XAG XPT XPD AUD BRL CAD CHF CLP CNY CZK DKK EUR GBP HKD HUF IDR ILS INR JPY KRW MXN MYR NOK NZD PHP PKR PLN RUB SEK SGD THB TRY TWD USD ZAR)
 EUR="false"
 CCSYMBOLSARRAY=()
 CCSYMBOLSLIST=""    # string of crypt currencies seperated by comma (,) without spaces ( ). E.g. btc,eth,ltc
@@ -226,7 +226,10 @@ function usage() {
     echo "${0##*/}: If necessary it installs packages $MYAPP and $MYAPP2."
     echo "${0##*/}: Inspiration and basic idea from ${bold}https://github.com/bichenkk/coinmon${reset}"
     echo "${0##*/}: Real-time market data from ${bold}https://www.coinmarketcap.com${reset}"
-    echo "${0##*/}: The default currency is USD and it supports AUD, BRL, CAD, CHF, CLP, CNY, CZK, "
+    echo "${0##*/}: The default currency is USD and it supports "
+    echo "${0##*/}:          BTC, ETH, USDT, XRP, BCH, BNB, DOT, LINK, CRO, BSV, LTC, "
+    echo "${0##*/}:          XAU, XAG, XPT, XPD, "
+    echo "${0##*/}:          AUD, BRL, CAD, CHF, CLP, CNY, CZK, "
     echo "${0##*/}:          DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY, KRW, MXN, MYR, NOK, NZD, "
     echo "${0##*/}:          PHP, PKR, PLN, RUB, SEK, SGD, THB, TRY, TWD, ZAR."
     echo "${0##*/}: ${0##*/} uses a temporary file $JSONFILE which gets automatically removed."
@@ -239,6 +242,8 @@ function usage() {
     echo "${0##*/}: Example: ${0##*/} -t -n 7 -e ...  uses Tor, prints market info of top 7 crypto currencies, "
     echo "${0##*/}:                              uses EUR for prices"
     echo "${0##*/}: Example: ${0##*/} -e  ...  shortcut for -f EUR, uses Euro for prices"
+    echo "${0##*/}: Example: ${0##*/} -f BTC  ...  gives prices in Bitcoin (BTC)"
+    echo "${0##*/}: Example: ${0##*/} -f XAU  ...  gives prices in Gold Troy ounces (XAU)"
     echo "${0##*/}: Example: ${0##*/} -f AUD  ...  gives prices in Australian Dollars (AUD)"
     echo "${0##*/}: Example: ${0##*/} -l btc  ...  lists only BTC"
     echo "${0##*/}: Example: ${0##*/} -l btc,eth,ltc  ...  lists BTC, ETH and LTC "
@@ -262,6 +267,7 @@ function usage() {
     echo "${0##*/}:    DO-ONLY-CLEANUP: Performs only cleanup, then exits [type: flag]"
     echo "${0##*/}: ${bold}--torify, -t${reset}"
     echo "${0##*/}:    TORIFY: Request the data via Tor onion network [type: flag]"
+    echo "${0##*/}:    Was disabled in latest Coinmarketcap.com API."
     echo "${0##*/}: ${bold}--top, -n${reset}"
     echo "${0##*/}:    TOP: How many crypto currencies should be displayed [type: integer] [default: $TOP]"
     echo "${0##*/}: ${bold}--fiat, -f${reset}"
@@ -364,10 +370,10 @@ function printHeader() {
         max_supply="Max-Supply"
         percent_change_1h="1h-Change"
         # dont put anything like ${bold} ${reset} here, it confuses `column` later
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%17s\t%17s\t%17s\t%17s\t%17s\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap"
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%17s\t%17s\t%17s\t%17s\t%17s\n" "$rank" "$symbol" "$name" "$price" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap"
     else
         # dont put anything like ${bold} ${reset} here, it confuses `column` later
-        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%17s\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap"
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%17s\n" "$rank" "$symbol" "$name" "$price" "$percent_change_24h" "$percent_change_7d" "$market_cap"
     fi
 }
 
@@ -454,7 +460,8 @@ function processEntry() {
     #price="${price%\"}"
     #price="${price#\"}"
     [ $seperator == "," ] && price=${price//./,} # replace all dots
-    price_btc="---"                              # no longer offered in same API call
+    # price_btc=$(echo "$1" | jq ".quote.BTC.price")  ==> Free API key does NOT support more than 1 currency!
+    price_btc="---"
     #price_btc="${price_btc%\"}"
     #price_btc="${price_btc#\"}"
     [ $seperator == "," ] && price_btc=${price_btc//./,} # replace all dots
@@ -495,9 +502,9 @@ function processEntry() {
         #percent_change_1h="${percent_change_1h%\"}"
         #percent_change_1h="${percent_change_1h#\"}"
         [ $seperator == "," ] && percent_change_1h=${percent_change_1h//./,} # replace all dots
-        printf "%d\t%s\t%s\t%'7.2f\t%3s\t%+6.1f%%\t%+6.1f%%\t%+6.1f%%\t%'17.f\t%'17.f\t%'17.f\t%'17.f\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap" 2>/dev/null
+        printf "%d\t%s\t%s\t%'1.8f\t%+6.1f%%\t%+6.1f%%\t%+6.1f%%\t%'17.f\t%'17.f\t%'17.f\t%'17.f\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$percent_change_1h" "$percent_change_24h" "$percent_change_7d" "$a24h_volume" "$available_supply" "$total_supply" "$max_supply" "$market_cap" 2>/dev/null
     else
-        printf "%d\t%s\t%s\t%'7.2f\t%3s\t%+6.1f%%\t%+6.1f%%\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$price_btc" "$percent_change_24h" "$percent_change_7d" "$market_cap" 2>/dev/null
+        printf "%d\t%s\t%s\t%'1.8f\t%+6.1f%%\t%+6.1f%%\t%'17.f\n" "$rank" "$symbol" "$name" "$price" "$percent_change_24h" "$percent_change_7d" "$market_cap" 2>/dev/null
     fi
 
     if [ "$useccsymbolslist" == "true" ]; then
@@ -512,7 +519,8 @@ function processEntry() {
 
 function main() {
     if [ "$COINMARKETCAP_API_KEY" == "" ]; then
-        echo "${0##*/}: ${red}${bold}Coinmarketcap-API-key missing.${reset} Global environment variable \"COINMARKETCAP_API_KEY\" is not set. Go to https://coinmarketcap.com and get your personal API key. Then assign it to environment variable \"COINMARKETCAP_API_KEY\"."
+        echo "${0##*/}: ${red}${bold}Coinmarketcap-API-key missing.${reset} Global environment variable \"COINMARKETCAP_API_KEY\" is not set."
+        echo "${0##*/}: Go to https://coinmarketcap.com and get your personal API key. Then assign it to environment variable \"COINMARKETCAP_API_KEY\"."
         exit 13
     fi
     # process arguments
@@ -535,6 +543,9 @@ function main() {
             ;;
         torify | t | tor | -torify | -t | -tor | --torify | --t | --tor)
             TORIFY="true"
+            echo "${0##*/}: ${red}${bold}This feature has been disabled by the API. It requires a captcha. Sorry.${reset}"
+            echo "${0##*/}: ${red}${bold}TOR use no longer allowed in the new API version.${reset}"
+            exit 33
             ;;
         top | n | number | -top | -n | -number | --top | --n | --number)
             if ! [[ "$2" =~ ^[0-9]+$ ]]; then
@@ -623,6 +634,7 @@ function main() {
         # shellcheck disable=SC2034
         FIATLC=${FIAT,,} # lowercase
     fi
+    # I tried this: `CONVERT="?convert=BTC,${FIATUC}"` but it gave error `Free version does not support more than 1 currency`.
     CONVERT="?convert=${FIATUC}"
     [ "$DEBUG" == "true" ] && echo "${0##*/}: ${green}${bold}Converting to fiat $FIATUC.${reset}"
 
@@ -715,6 +727,18 @@ function main() {
         for name in "${CCNAMESARRAY[@]}"; do
             [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" -s  \"${DATAURL}quotes/latest${CONVERT}&slug=${name}\" > \"${JSONFILE}.part\""
             $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}quotes/latest${CONVERT}&slug=${name}" >"${JSONFILE}.part"
+            errorstatus=$(cat "${JSONFILE}.part" | jq "[.status.error_code][]")
+            if [ "$errorstatus" != "0" ]; then
+                echo "${0##*/}: ${red}Error: The https://coinmarketcap.com/ API returned error code \"$errorstatus\". Aborting.${reset}"
+                echo "${0##*/}:     400 400 Bad Request"
+                echo "${0##*/}:    1002 401 Unauthorized"
+                echo "${0##*/}:    1006 403 Forbidden"
+                echo "${0##*/}:    1008 429 Too Many Requests"
+                echo "${0##*/}:     500 500 Internal Server Error "
+                echo "${0##*/}:     Timestamp:  $(cat "${JSONFILE}.part" | jq "[.status.timestamp][]")"
+                echo "${0##*/}:     Message:    $(cat "${JSONFILE}.part" | jq "[.status.error_message][]")"
+                exit "$ret"
+            fi
             # shellcheck disable=SC2046
             if [ $(grep -c "id not found" "${JSONFILE}.part") -eq 1 ]; then
                 echo "${0##*/}: ${yellow}WARNING: No crypto currency with name \"$name\" was not found.${reset} Skipping it."
@@ -736,6 +760,18 @@ function main() {
         LIMIT="&limit=${TOP}"
         [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" s \"${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1\" > \"${JSONFILE}\""
         $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1" >"${JSONFILE}"
+        errorstatus=$(cat "${JSONFILE}" | jq "[.status.error_code][]")
+        if [ "$errorstatus" != "0" ]; then
+            echo "${0##*/}: ${red}Error: The https://coinmarketcap.com/ API returned error code \"$errorstatus\". Aborting.${reset}"
+            echo "${0##*/}:     400 400 Bad Request"
+            echo "${0##*/}:    1002 401 Unauthorized"
+            echo "${0##*/}:    1006 403 Forbidden"
+            echo "${0##*/}:    1008 429 Too Many Requests"
+            echo "${0##*/}:     500 500 Internal Server Error "
+            echo "${0##*/}:     Timestamp:  $(cat "${JSONFILE}" | jq "[.status.timestamp][]")"
+            echo "${0##*/}:     Message:    $(cat "${JSONFILE}" | jq "[.status.error_message][]")"
+            exit "$ret"
+        fi
     fi
     setSeperator
     ii=0
