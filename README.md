@@ -48,9 +48,10 @@ $ coinbash.sh
 
 There are many options. Please run `coinbash.sh --help` to see them all. 
 You can use the `-f` (or `--fiat`) followed by a currency symbol to get the prices in your local currency, crypto, or metal ounces.
-The default currency is USD.
-= It supports crypto currencies: BTC, ETH, USDT, XRP, BCH, BNB, DOT, LINK, CRO, BSV, LTC. 
-- It supports metals: XAU, XAG, XPT, XPD. It supports local FIAT currencies: AUD, BRL, CAD, CHF, CLP, CNY, CZK, DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY, - KRW, MXN, MYR, NOK, NZD, PHP, PKR, PLN, RUB, SEK, SGD, THB, TRY, TWD, ZAR. 
+* The default currency is USD.
+* It supports crypto currencies: BTC, ETH, USDT, XRP, BCH, BNB, DOT, LINK, CRO, BSV, LTC. 
+* It supports metals: XAU, XAG, XPT, XPD. 
+* It supports local FIAT currencies: AUD, BRL, CAD, CHF, CLP, CNY, CZK, DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY,  KRW, MXN, MYR, NOK, NZD, PHP, PKR, PLN, RUB, SEK, SGD, THB, TRY, TWD, ZAR. 
 
 ```
 $ coinbash.sh -f BTC # get prices in BTC (Bitcoin)
