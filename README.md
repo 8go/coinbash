@@ -27,7 +27,7 @@
 ## Install
 
 There is no install. Download the release. Copy the single bash file `coinbash.sh` wherever you want, preferably some directory included in your `PATH`.
-If not already installed and only on the first run, `coinbash.sh` will install the small packages `curl` and `ql`. Set the environment variable `COINMARKETCAP_API_KEY` to your personal coinmarketcap-API-key.
+If not already installed and only on the first run, `coinbash.sh` will install the small packages `curl` and `ql`. Set the environment variable `COINMARKETCAP_API_KEY` to your personal coinmarketcap-API-key. Ready to go!
 
 ## Build
 
@@ -47,11 +47,15 @@ $ coinbash.sh
 ## Options
 
 There are many options. Please run `coinbash.sh --help` to see them all. 
-You can use the `-f` (or `--fiat`) followed by a fiat currency symbol to get the prices in your local currency.
-The default currency is USD and it supports AUD, BRL, CAD, CHF, CLP, CNY, CZK, DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY, KRW, MXN, MYR, NOK, NZD, PHP, PKR, PLN, RUB, SEK, SGD, THB, TRY, TWD, ZAR. 
+You can use the `-f` (or `--fiat`) followed by a currency symbol to get the prices in your local currency, crypto, or metal ounces.
+The default currency is USD.
+= It supports crypto currencies: BTC, ETH, USDT, XRP, BCH, BNB, DOT, LINK, CRO, BSV, LTC. 
+- It supports metals: XAU, XAG, XPT, XPD. It supports local FIAT currencies: AUD, BRL, CAD, CHF, CLP, CNY, CZK, DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY, - KRW, MXN, MYR, NOK, NZD, PHP, PKR, PLN, RUB, SEK, SGD, THB, TRY, TWD, ZAR. 
 
 ```
+$ coinbash.sh -f BTC # get prices in BTC (Bitcoin)
 $ coinbash.sh -f AUD # get prices in Australian Dollars
+$ coinbash.sh -f XAU # get prices in Gold ounces
 ```
 
 `-e` or `--eur` is a shortcut for Euros, a shortcut for `-f EUR`. 
@@ -92,7 +96,7 @@ coinbash.sh:                    [--listbysymbols <CRYPTO1SYMBOL,CRYPTO2SYMBOL,ET
 coinbash.sh:                    [--listbynames <CRYPTO1NAME,CRYPTO2NAME,ETC>]
 coinbash.sh:                    [--eur] [--fiat <CURRENCY>]
 coinbash.sh:        coinbash.sh --cleanup 
-coinbash.sh: Version: 2017-NOV-27
+coinbash.sh: Version: 2020-OCT-03
 coinbash.sh: License: GPL v3 https://www.gnu.org/licenses/gpl-3.0.en.html
 coinbash.sh: Source: https://github.com/8go/coinbash
 coinbash.sh: coinbash.sh requests data from www.coinmarketcap.com and lists market info on 
@@ -100,7 +104,8 @@ coinbash.sh:          the most valuable crypto currencies.
 coinbash.sh: If necessary it installs packages jq and curl.
 coinbash.sh: Inspiration and basic idea from https://github.com/bichenkk/coinmon
 coinbash.sh: Real-time market data from https://www.coinmarketcap.com
-coinbash.sh: The default currency is USD and it supports AUD, BRL, CAD, CHF, CLP, CNY, CZK, 
+coinbash.sh: The default currency is USD and it supports BTC, ETH, USDT, XRP, BCH, BNB, DOT, 
+coinbash.sh:          LINK, CRO, BSV, LTC, XAU, XAG, XPT, XPD, AUD, BRL, CAD, CHF, CLP, CNY, CZK, 
 coinbash.sh:          DKK, EUR, GBP, HKD, HUF, IDR, ILS, INR, JPY, KRW, MXN, MYR, NOK, NZD, 
 coinbash.sh:          PHP, PKR, PLN, RUB, SEK, SGD, THB, TRY, TWD, ZAR.
 coinbash.sh: coinbash.sh uses a temporary file /tmp/coinbash.sh.tmp.json which gets automatically removed.
@@ -113,6 +118,8 @@ coinbash.sh:                              top 5 crypto currencies, uses USD for 
 coinbash.sh: Example: coinbash.sh -t -n 7 -e ...  uses Tor, prints market info of top 7 crypto currencies, 
 coinbash.sh:                              uses EUR for prices
 coinbash.sh: Example: coinbash.sh -e  ...  shortcut for -f EUR, uses Euro for prices
+coinbash.sh: Example: coinbash.sh -f BTC  ...  gives prices in Bitcoin (BTC)
+coinbash.sh: Example: coinbash.sh -f XAU  ...  gives prices in Gold Troy ounces (XAU)
 coinbash.sh: Example: coinbash.sh -f AUD  ...  gives prices in Australian Dollars (AUD)
 coinbash.sh: Example: coinbash.sh -l btc  ...  lists only BTC
 coinbash.sh: Example: coinbash.sh -l btc,eth,ltc  ...  lists BTC, ETH and LTC 
@@ -136,6 +143,7 @@ coinbash.sh: --cleanup, -c
 coinbash.sh:    DO-ONLY-CLEANUP: Performs only cleanup, then exits [type: flag]
 coinbash.sh: --torify, -t
 coinbash.sh:    TORIFY: Request the data via Tor onion network [type: flag]
+coinbash.sh:    This was disabled in latest version of Coinmarketcap.com API.
 coinbash.sh: --top, -n
 coinbash.sh:    TOP: How many crypto currencies should be displayed [type: integer] [default: 10]
 coinbash.sh: --fiat, -f
@@ -157,8 +165,6 @@ coinbash.sh:    The larger the value for -p the longer execution will take.
 coinbash.sh: --verbose, -w
 coinbash.sh:    VERBOSE: Verbose listing of information including supply data, etc. [type: flag]
 ```
-
-Since 2020 prices are no longer available in `BTC` as this was removed from the API and would require additional calls.
 
 ## Screenshots
 
