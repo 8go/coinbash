@@ -67,6 +67,7 @@
 # {"status":{"timestamp":"2020-10-02T12:39:21.288Z","error_code":0,"error_message":null,"elapsed":30,"credit_count":1,"notice":null},"data":{"1":{"id":1,"name":"Bitcoin","symbol":"BTC","slug":"bitcoin","num_market_pairs":9315,"date_added":"2013-04-28T00:00:00.000Z","tags":["mineable","pow","sha-256","store-of-value","state-channels"],"max_supply":21000000,"circulating_supply":18505743,"total_supply":18505743,"is_active":1,"platform":null,"cmc_rank":1,"is_fiat":0,"last_updated":"2020-1002T12:38:21.000Z","quote":{"USD":{"price":10491.9489757,"volume_24h":26838808649.2375,"percent_change_1h":0.12782,"percent_change_24h":-3.70075,"percent_change_7d":-1.5155,"market_cap":194161311313.41742,"last_updated":"2020-10-02T12:38:21.000Z"}}}}}
 #
 # cat "/tmp/coinbash.sh.tmp.json.part" | jq [.data]
+# shellcheck disable=SC2016
 : '[
   {
     "1": {
@@ -508,7 +509,7 @@ function processEntry() {
     fi
 
     if [ "$useccsymbolslist" == "true" ]; then
-        if [ $MATCHED -ge ${#CCSYMBOLSARRAY[@]} ]; then
+        if [ "$MATCHED" -ge ${#CCSYMBOLSARRAY[@]} ]; then
             return "$ALLMATCHED" # stop scanning, all symbols have been matched
         fi
     fi
@@ -727,7 +728,7 @@ function main() {
         for name in "${CCNAMESARRAY[@]}"; do
             [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" -s  \"${DATAURL}quotes/latest${CONVERT}&slug=${name}\" > \"${JSONFILE}.part\""
             $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}quotes/latest${CONVERT}&slug=${name}" >"${JSONFILE}.part"
-            errorstatus=$(cat "${JSONFILE}.part" | jq "[.status.error_code][]")
+            errorstatus=$(jq < "${JSONFILE}.part" "[.status.error_code][]")
             if [ "$errorstatus" != "0" ]; then
                 echo "${0##*/}: ${red}Error: The https://coinmarketcap.com/ API returned error code \"$errorstatus\". Aborting.${reset}"
                 echo "${0##*/}:     400 400 Bad Request"
@@ -735,17 +736,17 @@ function main() {
                 echo "${0##*/}:    1006 403 Forbidden"
                 echo "${0##*/}:    1008 429 Too Many Requests"
                 echo "${0##*/}:     500 500 Internal Server Error "
-                echo "${0##*/}:     Timestamp:  $(cat "${JSONFILE}.part" | jq "[.status.timestamp][]")"
-                echo "${0##*/}:     Message:    $(cat "${JSONFILE}.part" | jq "[.status.error_message][]")"
+                echo "${0##*/}:     Timestamp:  $(jq < "${JSONFILE}.part" | "[.status.timestamp][]")"
+                echo "${0##*/}:     Message:    $(jq < "${JSONFILE}.part" | "[.status.error_message][]")"
                 exit "$ret"
             fi
             # shellcheck disable=SC2046
             if [ $(grep -c "id not found" "${JSONFILE}.part") -eq 1 ]; then
                 echo "${0##*/}: ${yellow}WARNING: No crypto currency with name \"$name\" was not found.${reset} Skipping it."
             else
-                key=$(cat "${JSONFILE}.part" | jq "[.data][] | keys" | jq .[]) # assign the id, name
+                key=$(jq < "${JSONFILE}.part" "[.data][] | keys" | jq .[]) # assign the id, name
                 # echo $key  ==>  "1"  for bitcoin
-                entry=$(cat "${JSONFILE}.part" | jq [.data][].$key)
+                entry=$(jq < "${JSONFILE}.part" "[.data][].$key")
                 if [ "$isfirst" == "true" ]; then
                     isfirst="false"
                 else
@@ -760,7 +761,7 @@ function main() {
         LIMIT="&limit=${TOP}"
         [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" s \"${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1\" > \"${JSONFILE}\""
         $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1" >"${JSONFILE}"
-        errorstatus=$(cat "${JSONFILE}" | jq "[.status.error_code][]")
+        errorstatus=$(jq < "${JSONFILE}" "[.status.error_code][]")
         if [ "$errorstatus" != "0" ]; then
             echo "${0##*/}: ${red}Error: The https://coinmarketcap.com/ API returned error code \"$errorstatus\". Aborting.${reset}"
             echo "${0##*/}:     400 400 Bad Request"
@@ -768,19 +769,20 @@ function main() {
             echo "${0##*/}:    1006 403 Forbidden"
             echo "${0##*/}:    1008 429 Too Many Requests"
             echo "${0##*/}:     500 500 Internal Server Error "
-            echo "${0##*/}:     Timestamp:  $(cat "${JSONFILE}" | jq "[.status.timestamp][]")"
-            echo "${0##*/}:     Message:    $(cat "${JSONFILE}" | jq "[.status.error_message][]")"
+            echo "${0##*/}:     Timestamp:  $(jq < "${JSONFILE}" "[.status.timestamp][]")"
+            echo "${0##*/}:     Message:    $(jq < "${JSONFILE}" "[.status.error_message][]")"
             exit "$ret"
         fi
     fi
     setSeperator
     ii=0
     morelines="true"
+    # shellcheck disable=2086
     while [ ${morelines} == "true" ]; do
         if [ "$useccnameslist" == "true" ]; then
-            ret=$(cat "${JSONFILE}" | jq ".[$ii]")
+            ret=$(jq < "${JSONFILE}" ".[$ii]")
         else
-            ret=$(cat "${JSONFILE}" | jq "[.data[$ii]][]")
+            ret=$(jq < "${JSONFILE}" "[.data[$ii]][]")
         fi
         if [ "$ret" == "null" ]; then
             morelines="false"
