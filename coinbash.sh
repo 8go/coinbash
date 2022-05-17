@@ -181,7 +181,7 @@ VERSION="false" # for --version argument;
 DOONLYCLEANUP="false" # for --cleanup argument;
 # shellcheck disable=SC2034
 COUNTER=0 # this is a counter of arguments
-VERSIONDESC="2020-OCT-03"
+VERSIONDESC="2022-MAY-17"
 MYAPP=jq    # this package is required, a json parser
 MYAPP2=curl # this package is required
 # https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?start=1&convert=USD&limit=10
@@ -454,9 +454,10 @@ function processEntry() {
     #rank="${rank%\"}"
     #rank="${rank#\"}"
     name=$(echo "$1" | jq ".name")
-    name="${name%\"}"  # remove trailing quote
-    name="${name#\"}"  # remove leading quote
-    name="${name/ /-}" # replace spaces with hyphen
+    name="${name%\"}" # remove trailing quote
+    name="${name#\"}" # remove leading quote
+    # name="${name/ /-}" # replace spaces with hyphen; this does NOT work, only replaces a single space
+    name=$(tr "[:blank:]" " " <<<$name | tr -s " " | tr " " "-")
     price=$(echo "$1" | jq ".quote.$FIATUC.price")
     #price="${price%\"}"
     #price="${price#\"}"
@@ -728,25 +729,33 @@ function main() {
         for name in "${CCNAMESARRAY[@]}"; do
             [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" -s  \"${DATAURL}quotes/latest${CONVERT}&slug=${name}\" > \"${JSONFILE}.part\""
             $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}quotes/latest${CONVERT}&slug=${name}" >"${JSONFILE}.part"
-            errorstatus=$(jq < "${JSONFILE}.part" "[.status.error_code][]")
+            firstLine=$(head -n 1 "${JSONFILE}.part")
+            if [ "${firstLine,,}" == "<!doctype html>" ] || [ "${firstLine}" == "<html>" ]; then
+                errorstatus=600
+            else
+                errorstatus=$(jq <"${JSONFILE}.part" "[.status.error_code][]" 2>/dev/null)
+            fi
             if [ "$errorstatus" != "0" ]; then
                 echo "${0##*/}: ${red}Error: The https://coinmarketcap.com/ API returned error code \"$errorstatus\". Aborting.${reset}"
                 echo "${0##*/}:     400 400 Bad Request"
                 echo "${0##*/}:    1002 401 Unauthorized"
                 echo "${0##*/}:    1006 403 Forbidden"
                 echo "${0##*/}:    1008 429 Too Many Requests"
-                echo "${0##*/}:     500 500 Internal Server Error "
-                echo "${0##*/}:     Timestamp:  $(jq < "${JSONFILE}.part" | "[.status.timestamp][]")"
-                echo "${0##*/}:     Message:    $(jq < "${JSONFILE}.part" | "[.status.error_message][]")"
+                echo "${0##*/}:     500 500 Internal Server Error"
+                echo "${0##*/}:     600 600 API responded with HTML page. Maybe a CAPTCHA. Using TOR?"
+                echo "${0##*/}: Timestamp:  $(jq <"${JSONFILE}.part" 2>/dev/null | "[.status.timestamp][]" 2>/dev/null)"
+                echo "${0##*/}: Message:    $(jq <"${JSONFILE}.part" 2>/dev/null | "[.status.error_message][]" 2>/dev/null)"
+                echo "${0##*/}: Reason:     Maybe you entered an unknown symbol or unknown name."
+                echo "${0##*/}:             Or something else failed on server."
                 exit "$ret"
             fi
             # shellcheck disable=SC2046
             if [ $(grep -c "id not found" "${JSONFILE}.part") -eq 1 ]; then
                 echo "${0##*/}: ${yellow}WARNING: No crypto currency with name \"$name\" was not found.${reset} Skipping it."
             else
-                key=$(jq < "${JSONFILE}.part" "[.data][] | keys" | jq .[]) # assign the id, name
+                key=$(jq <"${JSONFILE}.part" "[.data][] | keys" | jq .[]) # assign the id, name
                 # echo $key  ==>  "1"  for bitcoin
-                entry=$(jq < "${JSONFILE}.part" "[.data][].$key")
+                entry=$(jq <"${JSONFILE}.part" "[.data][].$key")
                 if [ "$isfirst" == "true" ]; then
                     isfirst="false"
                 else
@@ -759,30 +768,45 @@ function main() {
         rm -f "${JSONFILE}.part"
     else
         LIMIT="&limit=${TOP}"
+        if [ $TOP -gt $TOPDEFAULT ]; then
+            echo -n "be patient ..."
+        fi
         [ "$DEBUG" == "true" ] && echo "${0##*/}: DEBUG: $TORIFYCMD curl -H \"X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY\" -H \"Accept: application/json\" s \"${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1\" > \"${JSONFILE}\""
         $TORIFYCMD curl -H "X-CMC_PRO_API_KEY: $COINMARKETCAP_API_KEY" -H "Accept: application/json" -s "${DATAURL}listings/latest${CONVERT}${LIMIT}&start=1" >"${JSONFILE}"
-        errorstatus=$(jq < "${JSONFILE}" "[.status.error_code][]")
+        if [ $TOP -gt $TOPDEFAULT ]; then
+            echo -e -n "\b\b\b\b\b\b\b\b\b\b\b\b\b\b              \b\b\b\b\b\b\b\b\b\b\b\b\b\b" # erase "be patient ..."
+        fi
+        firstLine=$(head -n 1 "${JSONFILE}")
+        if [ "${firstLine,,}" == "<!doctype html>" ] || [ "${firstLine}" == "<html>" ]; then
+            errorstatus=600
+        else
+            errorstatus=$(jq <"${JSONFILE}" "[.status.error_code][]" 2>/dev/null)
+        fi
         if [ "$errorstatus" != "0" ]; then
             echo "${0##*/}: ${red}Error: The https://coinmarketcap.com/ API returned error code \"$errorstatus\". Aborting.${reset}"
             echo "${0##*/}:     400 400 Bad Request"
             echo "${0##*/}:    1002 401 Unauthorized"
             echo "${0##*/}:    1006 403 Forbidden"
             echo "${0##*/}:    1008 429 Too Many Requests"
-            echo "${0##*/}:     500 500 Internal Server Error "
-            echo "${0##*/}:     Timestamp:  $(jq < "${JSONFILE}" "[.status.timestamp][]")"
-            echo "${0##*/}:     Message:    $(jq < "${JSONFILE}" "[.status.error_message][]")"
+            echo "${0##*/}:     500 500 Internal Server Error"
+            echo "${0##*/}:     600 600 API responded with HTML page. Maybe a CAPTCHA. Using TOR?"
+            echo "${0##*/}: Timestamp:  $(jq <"${JSONFILE}" 2>/dev/null | "[.status.timestamp][]" 2>/dev/null)"
+            echo "${0##*/}: Message:    $(jq <"${JSONFILE}" 2>/dev/null | "[.status.error_message][]" 2>/dev/null)"
+            echo "${0##*/}: Reason:     Maybe you entered an unknown symbol or unknown name."
+            echo "${0##*/}:             Or something else failed on server."
             exit "$ret"
         fi
     fi
     setSeperator
     ii=0
     morelines="true"
+    echo -e -n "be patient ..."
     # shellcheck disable=2086
-    while [ ${morelines} == "true" ]; do
+    table=$(while [ ${morelines} == "true" ]; do
         if [ "$useccnameslist" == "true" ]; then
-            ret=$(jq < "${JSONFILE}" ".[$ii]")
+            ret=$(jq <"${JSONFILE}" ".[$ii]")
         else
-            ret=$(jq < "${JSONFILE}" "[.data[$ii]][]")
+            ret=$(jq <"${JSONFILE}" "[.data[$ii]][]")
         fi
         if [ "$ret" == "null" ]; then
             morelines="false"
@@ -797,7 +821,9 @@ function main() {
             fi
             ii=$((ii + 1))
         fi
-    done | tr -s "\t" " " | tr -s " " | column -t $COLUMNOPTIONS |
+    done)
+    echo -e -n "\b\b\b\b\b\b\b\b\b\b\b\b\b\b              \b\b\b\b\b\b\b\b\b\b\b\b\b\b" # erase "be patient ..."
+    echo "$table" | tr -s "\t" " " | tr -s " " | column -t $COLUMNOPTIONS |
         sed -e "s/\(\+[0-9]*\.[0-9]*%\)/${green}\1${reset}/g" \
             -e "s/\(\-[0-9]*\.[0-9]*%\)/${red}\1${reset}/g" \
             -e "s/\(\+[0-9]*\,[0-9]*%\)/${green}\1${reset}/g" \
