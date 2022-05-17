@@ -3,7 +3,13 @@
 
 # 💰 A bash script (CLI) for displaying crypto currencies market data in a terminal 🖥
 
-## Summary
+## Alternative Scripts
+
+- If you are solely interested in Bitcoin, there is a Bitcoin specific script here: [btc.sh](https://github.com/8go/matrix-eno-bot/blob/master/eno/scripts/btc.sh) in directory [scripts](https://github.com/8go/matrix-eno-bot/tree/master/eno/scripts).
+- Same for Ethereum. If you are only interested in Ethereum, there is a simple Ethereum specific script here: [eth.sh](https://github.com/8go/matrix-eno-bot/blob/master/eno/scripts/eth.sh) in directory [scripts](https://github.com/8go/matrix-eno-bot/tree/master/eno/scripts).
+- If you need more than Bitcoin and Ethereum, then use `coinbash`. :+1:
+
+## Summary of `coinbash`
 
 * Check cryptocurrencies' prices, price changes, market cap, trading volume and more on your console.
 * Simple and easy CLI tool for those who are both **Crypto investors** and **Engineers**. 
